@@ -9,7 +9,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = 'django-insecure-=*sx^ewsf-mb3d@*l$q(zpn28_p7zow2w$&(8b554!7xp0abe4'
+SECRET_KEY = ' '
 
 
 DEBUG = True
@@ -17,16 +17,17 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
+    'posts',
+    'about',
+    'users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'posts',
-    'users.apps.UsersConfig',
-    'about.apps.AboutConfig'
-]
+    ]
+    
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
