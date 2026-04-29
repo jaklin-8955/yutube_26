@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+sent_emails/
+staticfiles/
+.DS_Store
