@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}
   {% if is_edit %}Редактировать запись{% else %}Новая запись{% endif %}
 {% endblock %}
+
 {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
@@ -21,21 +23,23 @@
             {% csrf_token %}
             {% for field in form %}
               <div class="form-group row my-3">
-                <label for="{{ field.id_for_label }}" class="col-form-label">
+                <label for="{{ field.id_for_label }}" class="col-md-4 col-form-label">
                   {{ field.label }}
                   {% if field.field.required %}
                     <span class="required text-danger">*</span>
                   {% endif %}
                 </label>
-                {{ field }}
-                {% if field.help_text %}
-                  <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
-                    {{ field.help_text }}
-                  </small>
-                {% endif %}
-                {% for error in field.errors %}
-                  <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+                <div class="col-md-8">
+                  {{ field }}
+                  {% if field.help_text %}
+                    <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                      {{ field.help_text }}
+                    </small>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                  {% endfor %}
+                </div>
               </div>
             {% endfor %}
             <div class="d-flex justify-content-end">

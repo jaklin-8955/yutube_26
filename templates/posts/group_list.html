@@ -1,25 +1,28 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}
-  Записи сообщества {{ group.title }}
-{% endblock %}
+{% block title %}Записи сообщества {{ group.title }}{% endblock %}
 
 {% block content %}
+<div class="container py-5">
   <h1>{{ group.title }}</h1>
-  <p>{{ group.description }}</p>
+  <p>{{ group.description|linebreaksbr }}</p>
+
   {% for post in page_obj %}
-    <ul>
-      <li>Автор: {{ post.author.get_full_name }}</li>
-      <li>Дата публикации: {{ post.pub_date|date:"d E Y" }}</li>
-    </ul>
-    <p>{{ post.text }}</p>
-    {% if post.group %}
-      <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
-    {% endif %}
-    {% if post.author == user %}
-      <a class="btn btn-sm btn-primary" href="{% url 'posts:post_edit' post.id %}">Редактировать</a>
-    {% endif %}
+    <article>
+      <ul>
+        <li>Автор: {{ post.author.get_full_name|default:post.author.username }}</li>
+        <li>Дата публикации: {{ post.pub_date|date:"d E Y" }}</li>
+      </ul>
+      <p>{{ post.text|linebreaksbr }}</p>
+      {% if post.author == user %}
+        <a class="btn btn-sm btn-primary" href="{% url 'posts:post_edit' post.id %}">Редактировать</a>
+      {% endif %}
+    </article>
     {% if not forloop.last %}<hr>{% endif %}
+  {% empty %}
+    <p>В этой группе пока нет постов.</p>
   {% endfor %}
-  {% include 'includes/paginator.html' %}
+
+  {% include 'posts/includes/paginator.html' %}
+</div>
 {% endblock %}

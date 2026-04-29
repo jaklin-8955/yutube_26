@@ -34,3 +34,7 @@
   </div>
 </div>
 {% endblock %}
+
+{% if post.author == user %}
+  <a class="btn btn-sm btn-primary" href="{% url 'posts:post_edit' post.id %}">Редактировать</a>
+{% endif %}
