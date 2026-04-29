@@ -29,5 +29,8 @@ class Post(models.Model):
         related_name='posts'
     )
 
+    class Meta:
+        ordering = ['-pub_date']  # сортировка по дате (сначала новые)
+
     def __str__(self):
         return self.text[:30]
