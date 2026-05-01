@@ -1,0 +1,130 @@
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from posts.models import Group, Post
+
+User = get_user_model()
+
+
+class PostModelTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='testuser')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Описание группы'
+        )
+        cls.post = Post.objects.create(
+            text='Тестовый пост для модели',
+            author=cls.user,
+            group=cls.group
+        )
+
+    def test_verbose_name(self):
+        """verbose_name в полях совпадает с ожидаемым."""
+        field_verboses = {
+            'text': 'Текст поста',
+            'pub_date': 'Дата публикации',
+            'author': 'Автор',
+            'group': 'Группа',
+        }
+        for field, expected in field_verboses.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.post._meta.get_field(field).verbose_name,
+                    expected
+                )
+
+    def test_help_text(self):
+        """help_text в полях совпадает с ожидаемым."""
+        field_help_texts = {
+            'text': 'Напишите что-нибудь...',
+            'group': 'Необязательное поле',
+        }
+        for field, expected in field_help_texts.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.post._meta.get_field(field).help_text,
+                    expected
+                )
+
+    def test_str_methods(self):
+        """Проверяем, что __str__ работает корректно."""
+        self.assertEqual(str(self.post), self.post.text[:30])
+        self.assertEqual(str(self.group), self.group.title)
+
+    def test_ordering(self):
+        """Посты сортируются по убыванию даты (сначала новые)."""
+        post2 = Post.objects.create(
+            text='Старый пост',
+            author=self.user,
+            pub_date='2020-01-01'
+        )
+        posts = list(Post.objects.all())
+        self.assertEqual(posts[0], self.post)  # свежий пост первый
+        self.assertEqual(posts[1], post2)
+
+
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from posts.models import Group, Post
+
+User = get_user_model()
+
+
+class PostModelTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='testuser')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Описание группы'
+        )
+        cls.post = Post.objects.create(
+            text='Тестовый пост для модели',
+            author=cls.user,
+            group=cls.group
+        )
+
+    # ---------- Тесты для __str__ ----------
+    def test_group_str_returns_title(self):
+        """__str__ группы возвращает её название."""
+        self.assertEqual(str(self.group), self.group.title)
+
+    def test_post_str_returns_first_15_symbols(self):
+        """__str__ поста возвращает первые 15 символов текста."""
+        expected = self.post.text[:15]
+        self.assertEqual(str(self.post), expected)
+
+    # ---------- Тесты для verbose_name (доп. задание) ----------
+    def test_verbose_name(self):
+        """verbose_name в полях совпадает с ожидаемым."""
+        field_verboses = {
+            'text': 'Текст поста',
+            'pub_date': 'Дата публикации',
+            'author': 'Автор',
+            'group': 'Группа',
+        }
+        for field, expected in field_verboses.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.post._meta.get_field(field).verbose_name,
+                    expected
+                )
+
+    # ---------- Тесты для help_text (доп. задание) ----------
+    def test_help_text(self):
+        """help_text в полях совпадает с ожидаемым."""
+        field_help_texts = {
+            'text': 'Напишите что-нибудь...',
+            'group': 'Необязательное поле',
+        }
+        for field, expected in field_help_texts.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.post._meta.get_field(field).help_text,
+                    expected
+                )

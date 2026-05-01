@@ -10,3 +10,10 @@ class SignUp(CreateView):
     form_class = CreationForm
     success_url = reverse_lazy('posts:index')
     template_name = 'users/signup.html'
+
+from .forms import CreationForm   # вместо стандартной UserCreationForm
+
+class SignUp(CreateView):
+    form_class = CreationForm     # ← обязательно
+    template_name = 'users/signup.html'
+    success_url = reverse_lazy('users:login')
