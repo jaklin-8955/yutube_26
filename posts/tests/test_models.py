@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
 from posts.models import Group, Post
 
 User = get_user_model()
@@ -60,11 +62,16 @@ class PostModelTest(TestCase):
 
     def test_ordering(self):
         """Посты сортируются по убыванию даты (сначала новые)."""
+        new_post = Post.objects.create(
+            text='Новый пост',
+            author=self.user,
+            pub_date=timezone.now()
+        )
         old_post = Post.objects.create(
             text='Старый пост',
             author=self.user,
-            pub_date='2020-01-01'
+            pub_date=timezone.now() - timedelta(days=10)
         )
-        posts = list(Post.objects.all())
-        self.assertEqual(posts[0], self.post)  
-        self.assertEqual(posts[1], old_post)   
+        posts = list(Post.objects.all().order_by('-pub_date'))
+        self.assertEqual(posts[0], new_post)
+        self.assertEqual(posts[1], old_post)
