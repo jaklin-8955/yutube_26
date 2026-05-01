@@ -61,17 +61,22 @@ class PostModelTest(TestCase):
                 )
 
     def test_ordering(self):
-        """Посты сортируются по убыванию даты (сначала новые)."""
-        new_post = Post.objects.create(
-            text='Новый пост',
-            author=self.user,
-            pub_date=timezone.now()
-        )
-        old_post = Post.objects.create(
-            text='Старый пост',
-            author=self.user,
-            pub_date=timezone.now() - timedelta(days=10)
-        )
-        posts = list(Post.objects.all().order_by('-pub_date'))
-        self.assertEqual(posts[0], new_post)
-        self.assertEqual(posts[1], old_post)
+    """Посты сортируются по убыванию даты (сначала новые)."""
+    from django.utils import timezone
+    from datetime import timedelta
+
+    old_post = Post.objects.create(
+        text='Старый пост',
+        author=self.user,
+    )
+    old_post.pub_date = timezone.now() - timedelta(days=10)
+    old_post.save()
+
+    new_post = Post.objects.create(
+        text='Новый пост',
+        author=self.user,
+    )
+
+    posts = list(Post.objects.all().order_by('-pub_date'))
+    self.assertEqual(posts[0], new_post, "Новый пост должен быть первым")
+    self.assertEqual(posts[1], old_post, "Старый пост должен быть вторым")
