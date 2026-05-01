@@ -44,10 +44,10 @@ class URLTests(TestCase):
         """Авторизованный может открыть /create/, но не чужой /edit/."""
         response = self.auth.get(reverse('posts:post_create'))
         self.assertEqual(response.status_code, 200)
-        # Не автор поста пытается редактировать
+        
         another_user = User.objects.create_user(username='another')
         self.auth.force_login(another_user)
         edit = reverse('posts:post_edit', args=[self.post.id])
         response = self.auth.get(edit)
-        # Должен быть редирект на страницу поста (permission denied)
+       
         self.assertRedirects(response, reverse('posts:post_detail', args=[self.post.id]))

@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 def index(request):
-    """Главная страница со всеми постами (с пагинацией)"""
+   
     post_list = Post.objects.select_related('author', 'group').order_by('-pub_date')
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
@@ -18,7 +18,7 @@ def index(request):
 
 
 def group_posts(request, slug):
-    """Страница группы: посты группы с пагинацией"""
+    
     group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.select_related('author').order_by('-pub_date')
     paginator = Paginator(post_list, 10)
@@ -29,7 +29,6 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    """Профайл пользователя: посты автора с пагинацией"""
     author = get_object_or_404(User, username=username)
     post_list = author.posts.select_related('group').order_by('-pub_date')
     paginator = Paginator(post_list, 10)
@@ -40,7 +39,7 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    """Страница отдельного поста"""
+   
     post = get_object_or_404(
         Post.objects.select_related('author', 'group'),
         id=post_id
@@ -50,7 +49,7 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request):
-    """Создание нового поста"""
+   
     form = PostForm(request.POST or None)
     if form.is_valid():
         post = form.save(commit=False)
@@ -62,7 +61,7 @@ def post_create(request):
 
 @login_required
 def post_edit(request, post_id):
-    """Редактирование существующего поста (только для автора)"""
+    
     post = get_object_or_404(Post, id=post_id)
     if post.author != request.user:
         return redirect('posts:post_detail', post_id=post_id)
