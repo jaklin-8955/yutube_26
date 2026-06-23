@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('django.contrib.auth.urls')),  # ← пока только стандартные пути
+    path('auth/', include('django.contrib.auth.urls')),  
     path('about/', include('about.urls', namespace='about')),
     path('', include('posts.urls', namespace='posts')),
 ]
@@ -19,5 +19,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('about/', include('about.urls', namespace='about')),
-    # другие пути (auth, posts и т.д.) уже должны быть
+    
 ]
