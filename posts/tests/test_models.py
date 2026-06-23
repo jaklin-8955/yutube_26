@@ -22,6 +22,10 @@ class PostModelTest(TestCase):
             author=cls.user,
             group=cls.group
         )
+        # Устанавливаем дату поста из setUpClass на 20 дней назад,
+        # чтобы он не влиял на тест сортировки (будет третьим)
+        cls.post.pub_date = timezone.now() - timedelta(days=20)
+        cls.post.save()
 
     def test_group_str_returns_title(self):
         """__str__ группы возвращает её название."""
@@ -61,22 +65,19 @@ class PostModelTest(TestCase):
                 )
 
     def test_ordering(self):
-    """Посты сортируются по убыванию даты (сначала новые)."""
-    from django.utils import timezone
-    from datetime import timedelta
+        """Посты сортируются по убыванию даты (сначала новые)."""
+        old_post = Post.objects.create(
+            text='Старый пост',
+            author=self.user,
+        )
+        old_post.pub_date = timezone.now() - timedelta(days=10)
+        old_post.save()
 
-    old_post = Post.objects.create(
-        text='Старый пост',
-        author=self.user,
-    )
-    old_post.pub_date = timezone.now() - timedelta(days=10)
-    old_post.save()
+        new_post = Post.objects.create(
+            text='Новый пост',
+            author=self.user,
+        )
 
-    new_post = Post.objects.create(
-        text='Новый пост',
-        author=self.user,
-    )
-
-    posts = list(Post.objects.all().order_by('-pub_date'))
-    self.assertEqual(posts[0], new_post, "Новый пост должен быть первым")
-    self.assertEqual(posts[1], old_post, "Старый пост должен быть вторым")
+        posts = list(Post.objects.all().order_by('-pub_date'))
+        self.assertEqual(posts[0], new_post, "Новый пост должен быть первым")
+        self.assertEqual(posts[1], old_post, "Старый пост должен быть вторым")
