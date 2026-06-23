@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post
+from .models import Post, Group
 
 class PostForm(forms.ModelForm):
     class Meta:
@@ -13,4 +13,4 @@ class PostForm(forms.ModelForm):
             'text': 'Напишите что-нибудь...',
             'group': 'Выберите группу (необязательно)',
         }
-        
+

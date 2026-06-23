@@ -142,3 +142,41 @@ def post_detail(request, post_id):
         'posts_count': posts_count,
     }
     return render(request, 'posts/post_detail.html', context)
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from .forms import PostForm
+from .models import Post, Group
+
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect('posts:profile', username=request.user.username)
+    else:
+        form = PostForm()
+    context = {'form': form, 'is_edit': False}
+    return render(request, 'posts/create_post.html', context)
+
+@login_required
+def post_edit(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if post.author != request.user:
+        
+        return redirect('posts:post_detail', post_id=post_id)
+    
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('posts:post_detail', post_id=post_id)
+    else:
+        form = PostForm(instance=post)
+    
+    context = {'form': form, 'is_edit': True, 'post': post}
+    return render(request, 'posts/create_post.html', context)
