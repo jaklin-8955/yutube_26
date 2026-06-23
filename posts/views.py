@@ -77,3 +77,42 @@ def post_edit(request, post_id):
         'post_id': post_id,
     }
     return render(request, 'posts/create_post.html', context)
+
+from django.shortcuts import get_object_or_404, render
+from django.core.paginator import Paginator
+from django.contrib.auth.models import User
+from .models import Post, Group
+
+def profile(request, username):
+    # Получаем автора по username
+    author = get_object_or_404(User, username=username)
+    # Все посты автора, отсортированные по дате (сначала новые)
+    posts = author.posts.all().order_by('-pub_date')
+    # Пагинация: 10 постов на страницу
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    # Количество всех постов автора
+    count = posts.count()
+    context = {
+        'author': author,
+        'page_obj': page_obj,
+        'count': count,
+    }
+    return render(request, 'posts/profile.html', context)
+
+def post_detail(request, post_id):
+    # Получаем пост или 404
+    post = get_object_or_404(Post, id=post_id)
+    # Количество постов автора
+    count = post.author.posts.count()
+    context = {
+        'post': post,
+        'count': count,
+    }
+    return render(request, 'posts/post_detail.html', context)
+
+from django.http import HttpResponse
+
+def group_posts(request, slug):
+    return HttpResponse(f"Страница группы {slug} (заглушка)")

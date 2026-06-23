@@ -1,12 +1,75 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Об авторе проекта{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <h1>Привет, я автор проекта Yatube</h1>
-  <p>Меня зовут Заклин. Я изучаю Django и создаю свой первый сайт.</p>
-  <p>Меня вдохновляет мой кот и жёлтая уточка 🦆</p>
-  <p>Мои ссылки: <a href="https://github.com">GitHub</a></p>
+<div class="container py-4">
+  <h1 class="mb-4">Привет! Я — инженер-энергетик, техник-теплотехник и начинающий разработчик</h1>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <p class="lead">
+        Меня зовут Жаклин (ну или просто умница), мне 25 лет. 
+        По образованию и призванию — <strong>инженер-энергетик</strong> и <strong>техник-теплотехник</strong>. 
+        Работаю с котельными, тепловыми сетями и энергосистемами. 
+        А ещё я учусь писать код, чтобы автоматизировать всё, что можно, и создавать полезные веб-сервисы для энергетической отрасли.
+      </p>
+      <p>
+        Как я попала в программирование? На работе столкнулась с задачей — нужно было обрабатывать тонны данных с теплосчётчиков. 
+        Сначала использовала Excel, потом решила написать скрипт на Python — и затянуло! 
+        Теперь осваиваю Django, HTML, CSS и мечтаю создать свой портал для энергетиков.
+      </p>
+      <p>
+        Мой девиз: <em>«Тепло и свет — в каждый дом, а код — в каждую задачу»</em>.
+      </p>
+      <p>
+        В свободное время я обожаю готовить (особенно выпечку), читаю научную фантастику и путешествую. 
+        А ещё у меня есть кот по имени <strong>Тимофей</strong> — он мой главный QA-инженер: сидит на клавиатуре и помогает искать баги 🐱.
+      </p>
+      <p>
+        Мои профессиональные интересы: энергоэффективность, возобновляемая энергетика, умные сети и, конечно, веб-разработка.
+      </p>
+      <p>
+        Связаться со мной можно через 
+        <a href="https://github.com/ваш-логин" target="_blank">GitHub</a> 
+        или по почте: <a href="mailto:jaklin2555@yandex.ru">jaklin2555@yandex.ru</a>.
+      </p>
+    </div>
+    
+    <div class="col-md-4">
+      <!-- Картинка кружки (файл pop.jpg) -->
+      <div class="card">
+        <img src="{% static 'img/pop.jpg' %}" class="card-img-top" alt="Моя рабочая кружка">
+        <div class="card-body">
+          <p class="card-text text-muted">Моя любимая кружка — без неё код не пишется 😉</p>
+        </div>
+      </div>
+      <!-- Картинка кота (файл cat.jpg) -->
+      <div class="card mt-3">
+        <img src="{% static 'img/cat.jpg' %}" class="card-img-top" alt="Кот-тестировщик">
+        <div class="card-body">
+          <p class="card-text text-muted">Тимофей проверяет код на ошибки.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Блок с технологиями -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <h3>Что я использую в работе и учёбе</h3>
+      <ul class="list-inline">
+        <li class="list-inline-item badge bg-primary">Python</li>
+        <li class="list-inline-item badge bg-secondary">Django</li>
+        <li class="list-inline-item badge bg-success">SQLite</li>
+        <li class="list-inline-item badge bg-danger">HTML5 / CSS3</li>
+        <li class="list-inline-item badge bg-warning text-dark">Bootstrap</li>
+        <li class="list-inline-item badge bg-info text-dark">Git</li>
+        <li class="list-inline-item badge bg-dark">SolidWorks</li>
+        <li class="list-inline-item badge bg-light text-dark">AutoCAD</li>
+      </ul>
+    </div>
+  </div>
 </div>
 {% endblock %}

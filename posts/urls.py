@@ -12,4 +12,21 @@ urlpatterns = [
     path('posts/<int:post_id>/edit/', views.post_edit, name='post_edit'),
     
 ]
+from django.urls import path
+from . import views
 
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('profile/<str:username>/', views.profile, name='profile'),
+    path('posts/<int:post_id>/', views.post_detail, name='post_detail'),
+]
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('profile/<str:username>/', views.profile, name='profile'),
+    path('posts/<int:post_id>/', views.post_detail, name='post_detail'),
+    # Добавьте эту строку:
+    path('group/<slug:slug>/', views.group_posts, name='group_list'),
+]

@@ -1,16 +1,35 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Технологии{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <h1>Используемые технологии</h1>
-  <ul>
-    <li>Python 3.9</li>
-    <li>Django 4.2</li>
-    <li>Bootstrap 4</li>
-    <li>SQLite</li>
-  </ul>
-  <p>Пагинация, TemplateView, статические страницы.</p>
+<div class="row">
+  <h1>Вот что я умею</h1>
+  <aside class="col-12 col-md-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">Python 3.9</li>
+      <li class="list-group-item">Django 2.2.19</li>
+      <li class="list-group-item">HTML5 / CSS3</li>
+      <li class="list-group-item">Bootstrap 4</li>
+      <li class="list-group-item">SQLite</li>
+      <li class="list-group-item">Git</li>
+    </ul>
+  </aside>
+  <article class="col-12 col-md-9">
+    <p>
+      Этот сайт создан с использованием Django 2.2.19. 
+      Для стилизации применён Bootstrap 4. 
+      В проекте используются пагинация, классы TemplateView для статичных страниц,
+      а также эмуляция почтового сервера через filebased.EmailBackend.
+    </p>
+    <p>
+      Я хорошо разобралась с маршрутами, шаблонами и статикой. 
+      Ещё предстоит освоить формы и работу с базами данных глубже.
+    </p>
+    <p>
+      В процессе разработки мне помогали мой кот Базилио и жёлтая резиновая уточка 🦆.
+    </p>
+  </article>
 </div>
 {% endblock %}
