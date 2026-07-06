@@ -149,3 +149,16 @@ class PostURLTests(TestCase):
             with self.subTest(url=url):
                 response = self.author_client.get(url) if 'edit' in template else self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template.split(' (')[0])
+
+   
+from django.test import TestCase, Client
+
+class StaticURLTests(TestCase):
+    def setUp(self):
+       
+        self.guest_client = Client()
+
+    def test_homepage(self):
+       
+        response = self.guest_client.get('/')
+        self.assertEqual(response.status_code, 200)
