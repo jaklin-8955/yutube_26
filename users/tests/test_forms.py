@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from http import HTTPStatus
 from django.urls import reverse
+from django.contrib.auth.forms import UserCreationForm
 from users.forms import CreationForm
 
 
@@ -34,10 +35,8 @@ class UsersURLTests(TestCase):
     def setUp(self):
         self.client = Client()
 
-   
-
     def test_login_and_signup_accessible(self):
-        """Страницы входа и регистрации доступны всем (статус 200)."""
+        """Страницы входа и регистрации доступны всем."""
         urls = [
             reverse('users:login'),
             reverse('users:signup'),
@@ -50,17 +49,22 @@ class UsersURLTests(TestCase):
     def test_logout_redirects(self):
         """Страница выхода перенаправляет (статус 302)."""
         response = self.client.get(reverse('users:logout'))
-        self.assertEqual(response.status_code, HTTPStatus.FOUND)  #
-
-   
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_login_and_signup_templates(self):
         """Страницы входа и регистрации используют правильные шаблоны."""
         url_templates = {
-            reverse('users:login'): 'users/login.html',   
+            reverse('users:login'): 'users/login.html',
             reverse('users:signup'): 'users/signup.html',
         }
         for url, template in url_templates.items():
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertTemplateUsed(response, template)
+
+    def test_signup_context_has_form(self):
+        """На страницу регистрации в контексте передаётся форма."""
+        response = self.client.get(reverse('users:signup'))
+        self.assertIn('form', response.context)
+       
+        self.assertTrue(hasattr(response.context['form'], 'is_valid'))
