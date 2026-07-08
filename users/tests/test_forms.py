@@ -1,6 +1,8 @@
-
-from django.test import TestCase
+from django.test import TestCase, Client
+from http import HTTPStatus
+from django.urls import reverse
 from users.forms import CreationForm
+
 
 class CreationFormTest(TestCase):
     def test_form_valid(self):
@@ -26,3 +28,39 @@ class CreationFormTest(TestCase):
         form = CreationForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('username', form.errors)
+
+
+class UsersURLTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+   
+
+    def test_login_and_signup_accessible(self):
+        """Страницы входа и регистрации доступны всем (статус 200)."""
+        urls = [
+            reverse('users:login'),
+            reverse('users:signup'),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_logout_redirects(self):
+        """Страница выхода перенаправляет (статус 302)."""
+        response = self.client.get(reverse('users:logout'))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)  #
+
+   
+
+    def test_login_and_signup_templates(self):
+        """Страницы входа и регистрации используют правильные шаблоны."""
+        url_templates = {
+            reverse('users:login'): 'users/login.html',   
+            reverse('users:signup'): 'users/signup.html',
+        }
+        for url, template in url_templates.items():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertTemplateUsed(response, template)

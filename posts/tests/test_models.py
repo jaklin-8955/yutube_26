@@ -1,3 +1,4 @@
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -18,23 +19,19 @@ class PostModelTest(TestCase):
             description='Описание группы'
         )
         cls.post = Post.objects.create(
-            text='Тестовый пост для модели',
+            text='Тестовый пост для проверки __str__',
             author=cls.user,
             group=cls.group
         )
-        # Устанавливаем дату поста из setUpClass на 20 дней назад,
-        # чтобы он не влиял на тест сортировки (будет третьим)
-        cls.post.pub_date = timezone.now() - timedelta(days=20)
-        cls.post.save()
 
-    def test_group_str_returns_title(self):
-        """__str__ группы возвращает её название."""
-        self.assertEqual(str(self.group), self.group.title)
-
-    def test_post_str_returns_first_15_symbols(self):
-        """__str__ поста возвращает первые 15 символов текста."""
+    def test_post_str(self):
+        """__str__ поста возвращает первые 15 символов."""
         expected = self.post.text[:15]
         self.assertEqual(str(self.post), expected)
+
+    def test_group_str(self):
+        """__str__ группы возвращает её название."""
+        self.assertEqual(str(self.group), self.group.title)
 
     def test_verbose_name(self):
         """verbose_name в полях совпадает с ожидаемым."""
@@ -54,8 +51,8 @@ class PostModelTest(TestCase):
     def test_help_text(self):
         """help_text в полях совпадает с ожидаемым."""
         field_help_texts = {
-            'text': 'Напишите что-нибудь...',
-            'group': 'Необязательное поле',
+            'text': 'Введите текст поста',
+            'group': 'Группа, к которой будет относиться пост',
         }
         for field, expected in field_help_texts.items():
             with self.subTest(field=field):
@@ -66,6 +63,9 @@ class PostModelTest(TestCase):
 
     def test_ordering(self):
         """Посты сортируются по убыванию даты (сначала новые)."""
+        # Удаляем все посты, чтобы они не мешали
+        Post.objects.all().delete()
+
         old_post = Post.objects.create(
             text='Старый пост',
             author=self.user,
