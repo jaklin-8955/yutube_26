@@ -1,14 +1,16 @@
-from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
-from http import HTTPStatus   
-from django.urls import reverse
-from posts.models import Group, Post
 
+from http import HTTPStatus
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from posts.models import Group, Post
 
 User = get_user_model()
 
 
 class PostsURLTests(TestCase):
+    """Тесты URL-адресов приложения posts."""
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -20,7 +22,7 @@ class PostsURLTests(TestCase):
             slug='test-slug',
             description='Описание группы'
         )
-       
+        
         cls.post = Post.objects.create(
             text='Тестовый пост для URL-тестов',
             author=cls.user,
@@ -30,19 +32,17 @@ class PostsURLTests(TestCase):
         cls.other_user = User.objects.create_user(username='not_author')
 
     def setUp(self):
-       
+        
         self.guest_client = Client()
        
         self.author_client = Client()
         self.author_client.force_login(self.user)
-       
+      
         self.other_client = Client()
         self.other_client.force_login(self.other_user)
 
-  
-
     def test_public_pages_accessible_for_anyone(self):
-        """Публичные страницы доступны любому пользователю (включая анонимов)."""
+        """Публичные страницы доступны любому пользователю."""
         public_urls = [
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
@@ -68,9 +68,8 @@ class PostsURLTests(TestCase):
     def test_edit_page_author_only(self):
         """Страница редактирования поста доступна только автору."""
         edit_url = reverse('posts:post_edit', kwargs={'post_id': self.post.id})
-        
-        response = self.other_client.get(edit_url)
        
+        response = self.other_client.get(edit_url)
         self.assertNotEqual(response.status_code, HTTPStatus.OK)
 
     def test_private_pages_redirect_anonymous(self):
@@ -85,8 +84,6 @@ class PostsURLTests(TestCase):
                 response = self.guest_client.get(url, follow=True)
                 expected_redirect = f'{login_url}?next={url}'
                 self.assertRedirects(response, expected_redirect)
-
-   
 
     def test_urls_use_correct_templates(self):
         """URL-адреса используют ожидаемые HTML-шаблоны."""
@@ -104,9 +101,19 @@ class PostsURLTests(TestCase):
                 response = self.author_client.get(url)
                 self.assertTemplateUsed(response, template)
 
-    
-
     def test_unexisting_page_returns_404(self):
         """Запрос к несуществующей странице возвращает код 404."""
         response = self.guest_client.get('/unexisting_page/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+
+class StaticURLTests(TestCase):
+    """Smoke-тест главной страницы (для покрытия)."""
+
+    def setUp(self):
+        self.guest_client = Client()
+
+    def test_homepage(self):
+        """Главная страница доступна анонимному пользователю."""
+        response = self.guest_client.get('/')
+        self.assertEqual(response.status_code, HTTPStatus.OK)

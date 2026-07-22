@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -19,8 +20,8 @@ class Post(models.Model):
         help_text='Введите текст поста'
     )
     pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True
+        auto_now_add=True,
+        verbose_name='Дата публикации'
     )
     author = models.ForeignKey(
         User,
@@ -30,10 +31,10 @@ class Post(models.Model):
     )
     group = models.ForeignKey(
         Group,
-        on_delete=models.SET_NULL,
-        related_name='posts',
         blank=True,
         null=True,
+        on_delete=models.SET_NULL,
+        related_name='posts',
         verbose_name='Группа',
         help_text='Группа, к которой будет относиться пост'
     )

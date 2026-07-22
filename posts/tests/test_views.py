@@ -1,3 +1,4 @@
+
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -181,10 +182,60 @@ class PostViewsTest(TestCase):
         self.assertRedirects(response, reverse('posts:post_detail', kwargs={'post_id': self.post.id}))
 
     def test_post_with_group_appears_in_correct_pages(self):
-        """Если при создании поста указать группу, он появляется на главной, в группе, в профайле,
-        и не появляется в другой группе."""
+        """
+        Если при создании поста указать группу, он появляется на главной,
+        в группе, в профайле и не появляется в другой группе.
+        """
+   
+        new_post = Post.objects.create(
+            text='Пост с группой',
+            author=self.user,
+            group=self.group
+        )
+
+        
+        index_response = self.guest_client.get(reverse('posts:index'))
+        self.assertIn(new_post, index_response.context['page_obj'].object_list)
+
+        
+        group_response = self.guest_client.get(
+            reverse('posts:group_list', kwargs={'slug': self.group.slug})
+        )
+        self.assertIn(new_post, group_response.context['page_obj'].object_list)
+
+        
+        profile_response = self.authorized_client.get(
+            reverse('posts:profile', kwargs={'username': self.user.username})
+        )
+        self.assertIn(new_post, profile_response.context['page_obj'].object_list)
+
+        
+        other_group_response = self.guest_client.get(
+            reverse('posts:group_list', kwargs={'slug': self.other_group.slug})
+        )
+        self.assertNotIn(new_post, other_group_response.context['page_obj'].object_list)
+
+
+class PostFormTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='testuser')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Описание'
+        )
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
+    def test_post_creation_by_authorized_user(self):
+        """Авторизованный пользователь может создать пост."""
+        post_count_before = Post.objects.count()
         form_data = {
-            'text': 'Пост с группой',
+            'text': 'Созданный пост через тест',
             'group': self.group.id,
         }
         response = self.authorized_client.post(
@@ -193,23 +244,31 @@ class PostViewsTest(TestCase):
             follow=True
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        new_post = Post.objects.get(text='Пост с группой')
+        self.assertEqual(Post.objects.count(), post_count_before + 1)
+        new_post = Post.objects.latest('id')
+        self.assertEqual(new_post.text, form_data['text'])
         self.assertEqual(new_post.group, self.group)
+        self.assertEqual(new_post.author, self.user)
+        self.assertRedirects(response, reverse('posts:profile', kwargs={'username': self.user.username}))
 
-        index_response = self.guest_client.get(reverse('posts:index'))
-        self.assertIn(new_post, index_response.context['page_obj'].object_list)
-
-        group_response = self.guest_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.group.slug})
+    def test_post_edit_by_author(self):
+        """Автор может редактировать свой пост."""
+        post = Post.objects.create(
+            text='Старый текст',
+            author=self.user,
+            group=self.group
         )
-        self.assertIn(new_post, group_response.context['page_obj'].object_list)
-
-        profile_response = self.guest_client.get(
-            reverse('posts:profile', kwargs={'username': self.user.username})
+        form_data = {
+            'text': 'Новый текст',
+            'group': self.group.id,
+        }
+        response = self.authorized_client.post(
+            reverse('posts:post_edit', kwargs={'post_id': post.id}),
+            data=form_data,
+            follow=True
         )
-        self.assertIn(new_post, profile_response.context['page_obj'].object_list)
-
-        other_group_response = self.guest_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.other_group.slug})
-        )
-        self.assertNotIn(new_post, other_group_response.context['page_obj'].object_list)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        post.refresh_from_db()
+        self.assertEqual(post.text, 'Новый текст')
+        self.assertEqual(post.group, self.group)
+        self.assertRedirects(response, reverse('posts:post_detail', kwargs={'post_id': post.id}))
