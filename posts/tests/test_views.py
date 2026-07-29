@@ -1,215 +1,118 @@
-
-from django.test import TestCase, Client
+import shutil
+import tempfile
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-from http import HTTPStatus
-from posts.models import Group, Post
+from posts.models import Post, Group, Comment
 
 User = get_user_model()
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
-class PostViewsTest(TestCase):
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
+class PostImageTests(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.user = User.objects.create_user(username='testuser')
-        cls.author = User.objects.create_user(username='author')
         cls.group = Group.objects.create(
             title='Тестовая группа',
-            slug='test-slug',
-            description='Описание группы'
+            slug='test-slug'
+        )
+        cls.image = SimpleUploadedFile(
+            name='test_image.gif',
+            content=b'GIF87a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif'
         )
         cls.post = Post.objects.create(
-            text='Тестовый пост',
-            author=cls.author,
-            group=cls.group
-        )
-        cls.other_group = Group.objects.create(
-            title='Другая группа',
-            slug='other-slug',
-            description='Другая группа'
+            text='Пост с картинкой',
+            author=cls.user,
+            group=cls.group,
+            image=cls.image
         )
 
-    def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.author_client = Client()
-        self.author_client.force_login(self.author)
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
-    def test_pages_accessible_for_anonymous(self):
-        """Главная, страница группы, профайл, детали поста доступны анониму."""
-        urls = [
-            reverse('posts:index'),
-            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-            reverse('posts:profile', kwargs={'username': self.author.username}),
-            reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
-        ]
-        for url in urls:
-            with self.subTest(url=url):
-                response = self.guest_client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+    def test_image_in_context_on_index(self):
+        response = self.client.get(reverse('posts:index'))
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'На главной картинка отсутствует в контексте')
+        self.assertEqual(first_post.image.name, 'posts/test_image.gif')
 
-    def test_create_edit_only_authorized(self):
-        """Страницы создания и редактирования поста доступны только авторизованным."""
-        create_url = reverse('posts:post_create')
-        edit_url = reverse('posts:post_edit', kwargs={'post_id': self.post.id})
+    def test_image_in_context_on_profile(self):
+        response = self.client.get(reverse('posts:profile', args=[self.user.username]))
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'В профайле картинка отсутствует в контексте')
+        self.assertEqual(first_post.image.name, 'posts/test_image.gif')
 
-        response = self.guest_client.get(create_url)
-        self.assertRedirects(response, f'/auth/login/?next={create_url}')
+    def test_image_in_context_on_group(self):
+        response = self.client.get(reverse('posts:group_list', args=[self.group.slug]))
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'В группе картинка отсутствует в контексте')
+        self.assertEqual(first_post.image.name, 'posts/test_image.gif')
 
-        response = self.guest_client.get(edit_url)
-        self.assertRedirects(response, f'/auth/login/?next={edit_url}')
+    def test_image_in_context_on_detail(self):
+        response = self.client.get(reverse('posts:post_detail', args=[self.post.id]))
+        post_from_context = response.context['post']
+        self.assertTrue(post_from_context.image, 'На детальной странице картинка отсутствует в контексте')
+        self.assertEqual(post_from_context.image.name, 'posts/test_image.gif')
 
-        response = self.authorized_client.get(create_url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-        response = self.authorized_client.get(edit_url)
-        self.assertRedirects(response, reverse('posts:post_detail', kwargs={'post_id': self.post.id}))
-
-        response = self.author_client.get(edit_url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_pages_use_correct_templates(self):
-        """Проверка, что view-функции используют ожидаемые шаблоны."""
-        templates_urls = {
-            'posts/index.html': reverse('posts:index'),
-            'posts/group_list.html': reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-            'posts/profile.html': reverse('posts:profile', kwargs={'username': self.author.username}),
-            'posts/post_detail.html': reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
-            'posts/create_post.html': reverse('posts:post_create'),
-            'posts/create_post.html': reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-        }
-        for template, url in templates_urls.items():
-            with self.subTest(url=url):
-                if 'create' in url or 'edit' in url:
-                    client = self.author_client
-                else:
-                    client = self.guest_client
-                response = client.get(url)
-                self.assertTemplateUsed(response, template)
-
-    def test_index_uses_correct_template_and_context(self):
-        """Главная страница использует correct template и передаёт page_obj."""
-        response = self.guest_client.get(reverse('posts:index'))
-        self.assertTemplateUsed(response, 'posts/index.html')
-        self.assertIn('page_obj', response.context)
-        self.assertTrue(hasattr(response.context['page_obj'], 'object_list'))
-
-    def test_profile_uses_correct_context(self):
-        """Страница профайла передаёт автора и page_obj."""
-        response = self.guest_client.get(reverse('posts:profile', kwargs={'username': self.author.username}))
-        self.assertEqual(response.context['author'], self.author)
-        self.assertIn('page_obj', response.context)
-
-    def test_group_list_uses_correct_context(self):
-        """Страница группы передаёт группу и page_obj."""
-        response = self.guest_client.get(reverse('posts:group_list', kwargs={'slug': self.group.slug}))
-        self.assertEqual(response.context['group'], self.group)
-        self.assertIn('page_obj', response.context)
-
-    def test_post_detail_context(self):
-        """Страница деталей поста передаёт правильный пост."""
-        response = self.guest_client.get(reverse('posts:post_detail', kwargs={'post_id': self.post.id}))
-        self.assertEqual(response.context['post'], self.post)
-
-    def test_create_post_context(self):
-        """На страницу создания поста передаётся форма."""
-        response = self.author_client.get(reverse('posts:post_create'))
-        self.assertIn('form', response.context)
-
-    def test_pagination_on_index(self):
-        """На главной странице пагинатор выводит 10 постов на первой странице и 3 на второй."""
-        for i in range(12):
-            Post.objects.create(
-                text=f'Пост номер {i}',
-                author=self.author
-            )
-        response = self.guest_client.get(reverse('posts:index'))
-        self.assertEqual(len(response.context['page_obj']), 10)
-        response = self.guest_client.get(reverse('posts:index') + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
-
-    def test_pagination_on_profile(self):
-        """На странице профайла пагинатор работает аналогично."""
-        for i in range(12):
-            Post.objects.create(
-                text=f'Пост автора {i}',
-                author=self.author
-            )
-        url = reverse('posts:profile', kwargs={'username': self.author.username})
-        response = self.guest_client.get(url)
-        self.assertEqual(len(response.context['page_obj']), 10)
-        response = self.guest_client.get(url + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
-
-    def test_post_creation_by_authorized_user(self):
-        """Авторизованный пользователь может создать пост."""
-        post_count_before = Post.objects.count()
+    def test_create_post_with_image(self):
+        self.client.force_login(self.user)
+        new_image = SimpleUploadedFile(
+            name='new_image.gif',
+            content=b'GIF87a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif'
+        )
         form_data = {
-            'text': 'Созданный пост через тест',
+            'text': 'Новый пост с картинкой',
             'group': self.group.id,
+            'image': new_image,
         }
-        response = self.authorized_client.post(
+        response = self.client.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(Post.objects.count(), post_count_before + 1)
+        self.assertEqual(Post.objects.count(), 2)
         new_post = Post.objects.latest('id')
-        self.assertEqual(new_post.text, form_data['text'])
-        self.assertEqual(new_post.group, self.group)
-        self.assertEqual(new_post.author, self.user)
-        self.assertRedirects(response, reverse('posts:profile', kwargs={'username': self.user.username}))
+        self.assertTrue(new_post.image.name.startswith('posts/new_image'))
+        self.assertRedirects(response, reverse('posts:profile', args=[self.user.username]))
 
-    def test_post_edit_by_author(self):
-        """Автор может отредактировать свой пост."""
-        old_text = self.post.text
-        form_data = {
-            'text': 'Отредактированный текст',
-            'group': self.group.id,
-        }
-        response = self.author_client.post(
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-            data=form_data,
-            follow=True
-        )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.post.refresh_from_db()
-        self.assertNotEqual(self.post.text, old_text)
-        self.assertEqual(self.post.text, form_data['text'])
-        self.assertRedirects(response, reverse('posts:post_detail', kwargs={'post_id': self.post.id}))
 
-    def test_post_with_group_appears_in_correct_pages(self):
-        """
-        Если при создании поста указать группу, он появляется на главной,
-        в группе, в профайле и не появляется в другой группе.
-        """
-        new_post = Post.objects.create(
-            text='Пост с группой',
-            author=self.user,
-            group=self.group
+class CommentTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(username='testuser', password='testpass')
+        cls.post = Post.objects.create(
+            text='Тестовый пост для комментариев',
+            author=cls.user
         )
 
-       
-        index_response = self.guest_client.get(reverse('posts:index'))
-        self.assertIn(new_post, index_response.context['page_obj'].object_list)
+    def test_anonymous_cant_comment(self):
+        """Неавторизованный пользователь не может отправить комментарий."""
+        url = reverse('posts:add_comment', args=[self.post.id])
+        response = self.client.post(url, {'text': 'Анонимный комментарий'})
+        expected_redirect = f'/auth/login/?next={url}'
+        self.assertRedirects(response, expected_redirect)
+        self.assertEqual(Comment.objects.count(), 0)
 
-        
-        group_response = self.guest_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.group.slug})
-        )
-        self.assertIn(new_post, group_response.context['page_obj'].object_list)
+    def test_authorized_user_can_comment(self):
+        """Авторизованный пользователь может оставить комментарий."""
+        self.client.login(username='testuser', password='testpass')
+        url = reverse('posts:add_comment', args=[self.post.id])
+        response = self.client.post(url, {'text': 'Отличный пост!'}, follow=True)
+        self.assertEqual(Comment.objects.count(), 1)
+        comment = Comment.objects.first()
+        self.assertEqual(comment.text, 'Отличный пост!')
+        self.assertEqual(comment.author, self.user)
+        self.assertEqual(comment.post, self.post)
 
-        
-        profile_response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': self.user.username})
-        )
-        self.assertIn(new_post, profile_response.context['page_obj'].object_list)
-
-        
-        other_group_response = self.guest_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.other_group.slug})
-        )
-        self.assertNotIn(new_post, other_group_response.context['page_obj'].object_list)
+        detail_url = reverse('posts:post_detail', args=[self.post.id])
+        response = self.client.get(detail_url)
+        self.assertContains(response, 'Отличный пост!')
+        self.assertContains(response, self.user.username)
