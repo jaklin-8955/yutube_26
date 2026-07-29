@@ -34,7 +34,7 @@ class PostImageTests(TestCase):
         )
 
     def setUp(self):
-        # Очищаем кеш перед каждым тестом, чтобы не получать закешированные ответы
+        
         cache.clear()
 
     @classmethod
