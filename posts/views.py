@@ -2,12 +2,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
+from django.views.decorators.cache import cache_page  # перенесён вверх
 from .models import Post, Group, Comment
 from .forms import PostForm, CommentForm
 
 User = get_user_model()
 
 
+@cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.select_related('author', 'group').order_by('-pub_date')
     paginator = Paginator(post_list, 10)
@@ -43,13 +45,13 @@ def profile(request, username):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     posts_count = post.author.posts.count()
-    comments = post.comments.all()   
-    form = CommentForm()             
+    comments = post.comments.all()
+    form = CommentForm()
     context = {
         'post': post,
         'posts_count': posts_count,
-        'comments': comments,         
-        'form': form,                 
+        'comments': comments,
+        'form': form,
     }
     return render(request, 'posts/post_detail.html', context)
 

@@ -4,6 +4,7 @@ from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.core.cache import cache
 from posts.models import Post, Group, Comment
 
 User = get_user_model()
@@ -31,6 +32,10 @@ class PostImageTests(TestCase):
             group=cls.group,
             image=cls.image
         )
+
+    def setUp(self):
+        # Очищаем кеш перед каждым тестом, чтобы не получать закешированные ответы
+        cache.clear()
 
     @classmethod
     def tearDownClass(cls):
@@ -93,8 +98,10 @@ class CommentTests(TestCase):
             author=cls.user
         )
 
+    def setUp(self):
+        cache.clear()
+
     def test_anonymous_cant_comment(self):
-        """Неавторизованный пользователь не может отправить комментарий."""
         url = reverse('posts:add_comment', args=[self.post.id])
         response = self.client.post(url, {'text': 'Анонимный комментарий'})
         expected_redirect = f'/auth/login/?next={url}'
@@ -102,7 +109,6 @@ class CommentTests(TestCase):
         self.assertEqual(Comment.objects.count(), 0)
 
     def test_authorized_user_can_comment(self):
-        """Авторизованный пользователь может оставить комментарий."""
         self.client.login(username='testuser', password='testpass')
         url = reverse('posts:add_comment', args=[self.post.id])
         response = self.client.post(url, {'text': 'Отличный пост!'}, follow=True)
@@ -116,3 +122,31 @@ class CommentTests(TestCase):
         response = self.client.get(detail_url)
         self.assertContains(response, 'Отличный пост!')
         self.assertContains(response, self.user.username)
+
+
+class CacheTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(username='testuser')
+        cls.post = Post.objects.create(
+            text='Тестовый пост для кеша',
+            author=cls.user
+        )
+
+    def setUp(self):
+        cache.clear()
+
+    def test_index_cache_used(self):
+        url = reverse('posts:index')
+        with self.assertNumQueries(2):
+            response1 = self.client.get(url)
+        with self.assertNumQueries(0):
+            response2 = self.client.get(url)
+        self.assertEqual(response1.content, response2.content)
+
+    def test_index_cache_key_prefix(self):
+        url = reverse('posts:index')
+        self.client.get(url)
+        cache_keys = cache._cache.keys()
+        found = any('index_page' in key for key in cache_keys)
+        self.assertTrue(found, 'Ключ кеша с префиксом index_page не найден')

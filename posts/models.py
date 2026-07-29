@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from core.models import CreatedModel 
 
 User = get_user_model()
 
@@ -37,7 +38,6 @@ class Post(models.Model):
         verbose_name='Группа',
         help_text='Группа, к которой будет относиться пост'
     )
-    
     image = models.ImageField(
         verbose_name='Картинка',
         upload_to='posts/',
@@ -52,7 +52,8 @@ class Post(models.Model):
     def __str__(self):
         return self.text[:15]
 
-class Comment(models.Model):
+
+class Comment(CreatedModel):  # наследуем от CreatedModel
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -69,13 +70,10 @@ class Comment(models.Model):
         'Текст комментария',
         help_text='Введите текст комментария'
     )
-    created = models.DateTimeField(
-        'Дата и время публикации',
-        auto_now_add=True
-    )
+    
 
     class Meta:
-        ordering = ('created',)
+        ordering = ('created',)   
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 

@@ -25,3 +25,12 @@
   <p><a href="{% url 'users:login' %}">Войти снова</a></p>
 </div>
 {% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Вы вышли из системы{% endblock %}
+
+{% block content %}
+  {% with card_header='Выход' card_body='Вы вышли из своей учётной записи. Ждём вас снова!' %}
+    {% include 'users/includes/card.html' %} 
+  {% endwith %}
+{% endblock %}
