@@ -37,6 +37,10 @@ class PostImageTests(TestCase):
         )
 
     def setUp(self):
+<<<<<<< HEAD
+=======
+        
+>>>>>>> acd35a11585355c6c24eaf1c73b8ef196b6fabad
         cache.clear()
 
     @classmethod
@@ -167,6 +171,7 @@ class CacheTests(TestCase):
         cache_keys = cache._cache.keys()
         found = any('index_page' in key for key in cache_keys)
         self.assertTrue(found, 'Ключ кеша с префиксом index_page не найден')
+<<<<<<< HEAD
 
     def test_cache_after_post_deletion(self):
         """При удалении поста он остаётся в кеше до очистки."""
@@ -279,3 +284,5 @@ class ErrorPagesTests(TestCase):
         response = self.client.get('/nonexistent-page/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, 'core/404.html')
+=======
+>>>>>>> acd35a11585355c6c24eaf1c73b8ef196b6fabad
