@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'about',
     'users',
     'core',
-    'sorl.thumbnail',   # Добавлено для работы с миниатюрами
+    'sorl.thumbnail',   
 ]
 
 MIDDLEWARE = [
@@ -109,3 +109,4 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+

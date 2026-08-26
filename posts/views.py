@@ -2,8 +2,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
-from django.views.decorators.cache import cache_page  # перенесён вверх
-from .models import Post, Group, Comment
+from django.views.decorators.cache import cache_page
+from django.db import IntegrityError
+from .models import Post, Group, Comment, Follow
 from .forms import PostForm, CommentForm
 
 User = get_user_model()
@@ -15,7 +16,11 @@ def index(request):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'posts/index.html', {'page_obj': page_obj})
+    context = {
+        'page_obj': page_obj,
+        'index': True,
+    }
+    return render(request, 'posts/index.html', context)
 
 
 def group_posts(request, slug):
@@ -24,7 +29,10 @@ def group_posts(request, slug):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    context = {'group': group, 'page_obj': page_obj}
+    context = {
+        'group': group,
+        'page_obj': page_obj,
+    }
     return render(request, 'posts/group_list.html', context)
 
 
@@ -34,10 +42,16 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    following = False
+    if request.user.is_authenticated and request.user != author:
+        following = Follow.objects.filter(user=request.user, author=author).exists()
+
     context = {
         'author': author,
         'page_obj': page_obj,
         'post_count': post_list.count(),
+        'following': following,
     }
     return render(request, 'posts/profile.html', context)
 
@@ -67,7 +81,10 @@ def post_create(request):
         post.author = request.user
         post.save()
         return redirect('posts:profile', username=request.user.username)
-    context = {'form': form, 'is_edit': False}
+    context = {
+        'form': form,
+        'is_edit': False,
+    }
     return render(request, 'posts/create_post.html', context)
 
 
@@ -104,3 +121,49 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    """Лента постов авторов, на которых подписан текущий пользователь."""
+    posts = Post.objects.filter(
+        author__following__user=request.user
+    ).select_related('author', 'group').order_by('-pub_date')
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'follow': True,
+    }
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    """Подписаться на автора."""
+    author = get_object_or_404(User, username=username)
+    if request.user != author:
+        try:
+            Follow.objects.create(user=request.user, author=author)
+        except IntegrityError:
+            pass
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    """Отписаться от автора."""
+    author = get_object_or_404(User, username=username)
+    Follow.objects.filter(user=request.user, author=author).delete()
+    return redirect('posts:profile', username=username)
+
+
+def page_not_found(request, exception):
+    """Кастомная страница 404."""
+    return render(request, 'core/404.html', {'path': request.path}, status=404)
+
+
+def csrf_failure(request, reason=''):
+    """Кастомная страница 403 при ошибке CSRF."""
+    return render(request, 'core/403csrf.html', status=403)

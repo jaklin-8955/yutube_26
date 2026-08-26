@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from core.models import CreatedModel 
+from core.models import CreatedModel
 
 User = get_user_model()
 
@@ -53,7 +53,11 @@ class Post(models.Model):
         return self.text[:15]
 
 
-class Comment(CreatedModel):  # наследуем от CreatedModel
+class Comment(CreatedModel):
+    """
+    Комментарий к посту.
+    Поле created наследуется от CreatedModel.
+    """
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -70,12 +74,42 @@ class Comment(CreatedModel):  # наследуем от CreatedModel
         'Текст комментария',
         help_text='Введите текст комментария'
     )
-    
 
     class Meta:
-        ordering = ('created',)   
+        ordering = ('created',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
         return self.text[:20]
+
+
+class Follow(models.Model):
+    """
+    Модель подписки: пользователь user подписан на автора author.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='follower',
+        verbose_name='Подписчик'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_follow'
+            )
+        ]
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.author}'

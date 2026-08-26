@@ -1,6 +1,6 @@
-
 {% extends "base.html" %}
 {% load thumbnail %}
+
 {% block title %}Пост {{ post.text|truncatechars:30 }}{% endblock %}
 
 {% block content %}
@@ -50,7 +50,7 @@
             <form method="post" action="{% url 'posts:add_comment' post.id %}">
               {% csrf_token %}
               <div class="form-group mb-2">
-                <textarea name="text" class="form-control" rows="3" placeholder="Введите ваш комментарий..." required></textarea>
+                {{ form.text }}
               </div>
               <button type="submit" class="btn btn-primary">Отправить</button>
             </form>
